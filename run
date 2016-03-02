@@ -81,6 +81,7 @@ fi
 while true; do
   /marathon-lb/marathon_lb.py \
     --syslog-socket /dev/null \
+    --log-format "%(asctime)s %(levelname)s:%(message)s" \
     --haproxy-config /marathon-lb/haproxy.cfg \
     -c "sv reload $HAPROXY_SERVICE" \
     $ARGS "$@" &
