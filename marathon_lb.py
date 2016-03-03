@@ -52,7 +52,6 @@ from sseclient import SSEClient
 from six.moves.urllib import parse
 from itertools import cycle
 from common import *
-import eventlet
 import argparse
 import json
 import logging
@@ -70,7 +69,6 @@ import dateutil.parser
 import math
 import threading
 
-eventlet.monkey_patch()
 
 logger = logging.getLogger('marathon_lb')
 
@@ -511,17 +509,16 @@ class Marathon(object):
 
             for path_elem in path:
                 path_str = path_str + "/" + path_elem
-            with eventlet.Timeout(30):
-                response = requests.request(
-                    method,
-                    path_str,
-                    auth=auth,
-                    headers={
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    **kwargs
-                )
+            logger.debug("exec %s %s", method, path_str)
+            response = requests.request(
+                method,
+                path_str,
+                timeout=30,
+                auth=auth,
+                headers={
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }, **kwargs)
             logger.debug("%s %s", method, response.url)
             if response.status_code == 200:
                 break
