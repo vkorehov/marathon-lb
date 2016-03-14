@@ -530,7 +530,13 @@ class Marathon(object):
         return response
 
     def api_req(self, method, path, **kwargs):
-        return self.api_req_raw(method, path, self.__auth, **kwargs).json()
+        while True:
+            try:
+                return self.api_req_raw(method, path, self.__auth, **kwargs).json()
+            except:
+                e = sys.exc_info()[0]
+                logger.error("%s %s returned exception: '%s' retrying", method, path, e)
+                time.sleep(10)
 
     def create(self, app_json):
         return self.api_req('POST', ['apps'], app_json)
@@ -814,8 +820,8 @@ def get_haproxy_pids():
             stderr=subprocess.STDOUT,
             shell=True)
     except subprocess.CalledProcessError as ex:
+        logger.debug("failed to get process:" + str(ex))
         return ''
-
 
 def reloadConfig():
     reloadCommand = []
@@ -846,8 +852,12 @@ def reloadConfig():
             pids = get_haproxy_pids()
             subprocess.check_call(reloadCommand, close_fds=True)
             # Wait until the reload actually occurs
-            while pids == get_haproxy_pids():
+            timeout = 100
+            while pids == get_haproxy_pids() and timeout > 0:
                 time.sleep(0.1)
+                timeout -= 1;
+            if timeout <= 0:
+                logger.debug("reload timeout occured, trying from scratch next time")
             logger.debug("reload finished, took %s seconds",
                          time.time() - start_time)
         except OSError as ex:
