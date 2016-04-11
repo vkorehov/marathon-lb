@@ -149,12 +149,12 @@ class ConfigTemplater(object):
 '''
 
     HAPROXY_HTTP_FRONTEND_ACL = '''\
-  acl host_{cleanedUpHostname} hdr(host) -i {hostname}
+  acl host_{cleanedUpHostname} hdr_dom(host) -i {hostname}
   use_backend {backend} if host_{cleanedUpHostname}
 '''
 
     HAPROXY_HTTP_FRONTEND_ACL_ONLY = '''\
-  acl host_{cleanedUpHostname} hdr(host) -i {hostname}
+  acl host_{cleanedUpHostname} hdr_dom(host) -i {hostname}
 '''
 
     HAPROXY_HTTP_FRONTEND_ROUTING_ONLY = '''\
