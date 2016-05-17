@@ -808,7 +808,7 @@ def config(apps, groups, bind_http_https, ssl_certs, templater):
         config += https_frontends
     config += frontends
     config += backends
-
+    logger.info("Config generated")
     return config
 
 
@@ -825,6 +825,7 @@ def get_haproxy_pids():
 reloadFailed = False
 
 def reloadConfig():
+    global reloadFailed
     reloadCommand = []
     if args.command:
         reloadCommand = shlex.split(args.command)
@@ -985,20 +986,21 @@ def compareWriteAndReloadConfig(config, config_file):
     # haproxy
     runningConfig = str()
     try:
-        logger.debug("reading running config from %s", config_file)
+        logger.info("reading running config from %s", config_file)
         with open(config_file, "r") as f:
             runningConfig = f.read()
     except IOError:
         logger.warning("couldn't open config file for reading")
 
-    if runningConfig != config || reloadFailed:
+    if runningConfig != config or reloadFailed:
         logger.info(
             "running config is different from generated config - reloading")
         if writeConfigAndValidate(config, config_file):
             reloadConfig()
         else:
             logger.warning("skipping reload: config not valid")
-
+    else:
+        logger.warning("same config, dont reload")
 
 def get_health_check(app, portIndex):
     for check in app['healthChecks']:

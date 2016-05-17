@@ -1,17 +1,12 @@
 #!/bin/bash
 exec 2>&1
 export PIDFILE="/tmp/haproxy.pid"
-exec 200<$0
 
 reload() {
   echo "Reloading haproxy"
   if ! haproxy -c -f /marathon-lb/haproxy.cfg; then
     echo "Invalid config"
     return 1
-  fi
-  if ! flock 200; then
-    echo "Can't aquire lock, reload already in progress?"
-    return
   fi
 
   # Begin to drop SYN packets with firewall rules
@@ -39,9 +34,6 @@ reload() {
   #done
   echo "RESTORING IPTABLES"
   iptables -F INPUT
-  # Need to wait 1s to prevent TCP SYN exponential backoff
-  sleep 1
-  flock -u 200
 }
 
 mkdir -p /var/state/haproxy
