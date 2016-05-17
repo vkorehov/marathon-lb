@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+# clear input queue in iptables in case of unsolicited shutdown happened
+iptables -F INPUT
+
 HAPROXY_SERVICE="/marathon-lb/service/haproxy"
 mkdir -p $HAPROXY_SERVICE/env
 

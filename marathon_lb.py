@@ -76,8 +76,7 @@ class ConfigTemplater(object):
     HAPROXY_HEAD = dedent('''\
     global
       daemon
-      log /dev/log local0
-      log /dev/log local1 notice
+      log 127.0.0.1 local0
       maxconn 50000
       tune.ssl.default-dh-param 2048
       ssl-default-bind-options no-sslv3 no-tls-tickets force-tlsv12
@@ -823,6 +822,8 @@ def get_haproxy_pids():
         logger.debug("failed to get process:" + str(ex))
         return ''
 
+reloadFailed = False
+
 def reloadConfig():
     reloadCommand = []
     if args.command:
@@ -845,6 +846,7 @@ def reloadConfig():
             logger.debug("no haproxy detected. won't reload.")
             reloadCommand = None
 
+    reloadFailed = False
     if reloadCommand:
         logger.info("reloading using %s", " ".join(reloadCommand))
         try:
@@ -857,17 +859,20 @@ def reloadConfig():
                 time.sleep(0.1)
                 timeout -= 1;
             if timeout <= 0:
-                logger.debug("reload timeout occured, trying from scratch next time")
-            logger.debug("reload finished, took %s seconds",
+                logger.error("reload timeout occured, trying from scratch next time")
+                reloadFailed = True
+            logger.info("reload finished, took %s seconds",
                          time.time() - start_time)
         except OSError as ex:
             logger.error("unable to reload config using command %s",
                          " ".join(reloadCommand))
             logger.error("OSError: %s", ex)
+            reloadFailed = True
         except subprocess.CalledProcessError as ex:
             logger.error("unable to reload config using command %s",
                          " ".join(reloadCommand))
             logger.error("reload returned non-zero: %s", ex)
+            reloadFailed = True
 
 
 def generateHttpVhostAcl(templater, app, backend):
@@ -986,7 +991,7 @@ def compareWriteAndReloadConfig(config, config_file):
     except IOError:
         logger.warning("couldn't open config file for reading")
 
-    if runningConfig != config:
+    if runningConfig != config || reloadFailed:
         logger.info(
             "running config is different from generated config - reloading")
         if writeConfigAndValidate(config, config_file):

@@ -7,7 +7,7 @@ import logging
 
 
 def setup_logging(logger, syslog_socket, log_format):
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     formatter = logging.Formatter(log_format)
 
